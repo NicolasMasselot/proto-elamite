@@ -324,3 +324,11 @@
   or implying that corpus images are redistributable.
 - Next session first: keep README figures synchronized with tests and
   `NOTES.md` whenever a result changes.
+
+## 2026-07-27 — README reconciliation
+
+- Compared the working file, local committed file, and `origin/main`.
+  Selected the current working README as authoritative; its Git blob
+  `4022f280f7f1ad6fc806daa6fb7172df99f90d5c` already matched GitHub exactly.
+- Decision: reconcile the divergent commits with a normal merge, preserve
+  the local MIT license, and avoid a force push or any content rewrite.
