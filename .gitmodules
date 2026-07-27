@@ -1,0 +1,3 @@
+[submodule "data/pe-headers"]
+	path = data/pe-headers
+	url = https://github.com/sfu-natlang/pe-headers.git
