@@ -309,3 +309,18 @@
   current corpus record headed MDP 26, 177 and has different content. This
   catalog-number discrepancy is worth reporting upstream to the paper
   authors and CDLI. Do not silently alter the pinned corpus.
+
+## 2026-07-27 — Public README
+
+- Attempted: added a public-facing README with a reproducible `uv` setup,
+  pinned-submodule instructions, the corpus and numeral replication tables,
+  subset and full-sum closure definitions, all pre-registered null results,
+  interpretation limits, and the P008805 metadata note.
+- Decision: lead with measured outcomes and deltas; describe this as a
+  deterministic replication and arithmetic-constraint project, never as a
+  decipherment. Preserve the chance-level subset result beside the stricter
+  full-sum controls.
+- Ruled out: adding a new analysis, rerunning a null, claiming sign meanings,
+  or implying that corpus images are redistributable.
+- Next session first: keep README figures synchronized with tests and
+  `NOTES.md` whenever a result changes.
