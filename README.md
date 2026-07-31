@@ -1,30 +1,36 @@
 # Proto-Elamite arithmetic replication
 
-An independent, deterministic replication of published computational results
-on the proto-Elamite corpus, followed by narrowly scoped tests of arithmetic
+An independent, deterministic reimplementation of published computational
+results on the proto-Elamite corpus, with exploratory tests of arithmetic
 closure.
 
 This is **not a decipherment project**. It does not ask a model to interpret
 signs, guess meanings, or translate texts. Parsing, numeral conversion,
 constraint checks, and permutation tests are ordinary seeded Python code.
 
-## Result
+## Status and scope
 
-- **The closure method works.** Under the strict full-sum definition, 63 of
-  425 candidate tablets close arithmetically, against a null mean of 6.27
-  (obverse-only control, 5,000 draws, `p = 0.0002`). No null distribution for
-  this method appears in the published literature, so this is the first
-  quantitative evidence that the method detects something other than
-  combinatorial coincidence.
-- **The published count replicates.** Full-sum closure with an unambiguous
-  witness yields 21 tablets against the 24 reported by Born et al. (2023).
-- **A permissive definition destroys the signal.** Allowing any obverse subset
-  rather than the full sum raises the raw count from 63 to 151, while dropping
-  it to chance level under a pool-wide null. Same corpus, same machinery, one
-  definitional choice.
-- **Corpus drift is measurable.** Nine tablets cited in the paper's Appendix A
-  now have zero reverse entries in the current transcription, and two others
-  have three and four.
+This repository is a reimplementation and a set of open questions, not a
+result. Specifically:
+
+- It **does not** claim to replicate the 24 disambiguated texts reported by
+  Born et al. (2023). Set identity is unverified and the procedures differ.
+- It **does not** claim to validate or invalidate the published method.
+- The permutation analyses below are **exploratory**. Definitions and null
+  designs were arrived at through a sequential process in which earlier
+  results were visible. Decision rules were written down before each
+  computation, which is documented in `NOTES.md`, but this is not
+  preregistration and the p-values should not be read as calibrated error
+  rates.
+
+What the repository does offer: an independently written parser and numeral
+converter, a test suite locking in the published figures, a measured set of
+deltas against a more recent corpus snapshot, and permutation machinery that
+did not previously exist for this corpus.
+
+An earlier version of this README made stronger claims. Those claims did not
+survive external review and have been removed. The reasoning that produced
+them, including the errors, remains in `NOTES.md`.
 
 ## Reproduce it
 
@@ -45,20 +51,24 @@ The test suite currently contains 34 tests and runs in under a minute on a
 laptop. It requires no GPU, API key, or network access after the repository
 and submodule have been cloned.
 
-The canonical corpus is [`sfu-natlang/pe-headers`](https://github.com/sfu-natlang/pe-headers), pinned
-as a submodule at:
+The corpus is [`sfu-natlang/pe-headers`](https://github.com/sfu-natlang/pe-headers), pinned as a
+submodule at:
 
 ```
 88948d18f3d9c0250c33344fd9e6c8968438869f
 ```
 
-That snapshot is dated 2023-02-09. Every random process uses the fixed seed
-`20260727`.
+That snapshot is dated **2023-02-09**, roughly four months after the
+2022-10-03 corpus download documented in the paper. It is not the current CDLI
+state, and the differences reported below may reflect either snapshot drift or
+implementation divergence. They are reported, not attributed.
 
-## Detailed results
+Every random process uses the fixed seed `20260727`.
 
-The purpose of the replication is to report movement against the published
-figures, not to adjust the implementation until they match.
+## Replication of published figures
+
+These are the solid part of this repository. They are measured directly
+against published numbers and do not depend on any modelling choice.
 
 ### Corpus inventory
 
@@ -81,7 +91,8 @@ identified but broken sign, an unreadable sign, and a missing sign.
 
 Numerals are converted under the decimal (D), sexagesimal (S),
 bisexagesimal (B), and capacity (C) systems using Algorithm 1 and Figure 1
-from the corrected revision of Born et al., [arXiv:2502.00090v2](https://arxiv.org/abs/2502.00090).
+from the corrected revision of Born et al.,
+[arXiv:2502.00090v2](https://arxiv.org/abs/2502.00090).
 
 | Valid systems    | Published | This snapshot | Delta |
 | ---------------- | --------- | ------------- | ----- |
@@ -104,90 +115,167 @@ Summary:
 - At least one valid reading: 7,959 versus 7,984 (`-25`)
 - Unambiguous readings: 1,942 versus 1,899 (`+43`)
 
-The 49 invalid notations are documented rather than normalized away. Their
-causes include Figure-1-absent signs, over-counts before carrying, and
-mixed-system sequences.
+Two deltas here may be worth the authors' attention. The invalid count is
+**49 against 27 published**, and unambiguous readings number **1,942 against
+1,899**. The invalid notations are documented rather than normalized away:
+they include Figure-1-absent signs (N02 in 22 cases, N51G in 6, N39A in 4),
+over-counts before carrying, and mixed-system sequences. No aliases or carry
+limits were added to reduce these deltas.
 
-### Arithmetic closure
+The `+43` on unambiguous readings is not small relative to the downstream
+analysis, which turns on the presence of unambiguous notations in tablets
+numbering in the tens.
 
-The baseline candidate set contains 425 tablets with one or two reverse
-entries. Two definitions are reported side by side:
+## Closure implementation
 
-- **Subset sum:** any non-empty subset of obverse numeral readings may equal a
-  reverse reading.
-- **Full sum:** every valid obverse numeral notation must participate under
-  one consistent system.
+The paper's method is a **subset-sum** search: it asks whether any combination
+of obverse readings equals any reading of the reverse under one consistent
+system. Candidates are then retained after manual inspection by domain
+experts. The paper reports **24 texts**; the pre-inspection count and the 24
+P-numbers are not published.
 
-| Definition | Raw closures | With an unambiguous witness | Witness / raw |
-| ---------- | ------------ | --------------------------- | ------------- |
-| Subset sum | 151          | 52                          | 34.4371%      |
-| Full sum   | 63           | 21                          | 33.3333%      |
+This repository implements the subset-sum rule and, separately, a stricter
+full-sum variant.
 
-The paper reports 24 texts after manual inspection. The strict full-sum
-witness count is the closest automatic analogue here: 21 (`delta -3`). The
-earlier 52-versus-24 gap was an artifact of using the subset definition, and
-undocumented manual filtering is not needed to explain it.
+| Definition                          | Raw closures (of 425 candidates) | With an unambiguous witness |
+| ----------------------------------- | -------------------------------- | --------------------------- |
+| Subset sum (the published method)   | 151                              | 52                          |
+| Full sum (a stricter variant, ours) | 63                               | 21                          |
 
-**Set identity is unverified.** The counts are close, but the paper does not
-publish its 24 P-numbers, so the two sets cannot be compared directly. Of the
-15 tablets cited in the paper's Appendix A, 3 appear in the subset-sum witness
-set here (P008014, P008173, P008243). Most of the remainder were disambiguated
-in the paper by evidence other than subset-sum, chiefly the 2.5:1 ratio of
-M056~f to M288, so their absence is expected rather than a failed check.
-Two counts of close-but-not-identical size are not proof of the same result.
+**The full-sum rule is not the published method.** It was introduced here
+after reading the paper's description of tablet P008014, where all entries
+happen to participate. That description characterises one tablet, not the
+general algorithm. The full-sum numbers are reported only as a diagnostic on
+how sensitive the outcome is to search permissiveness. The numerical proximity
+of 21 to the published 24 is unexplained and is not a replication: the
+procedures differ, and set identity is unknown because the 24 P-numbers are
+unpublished.
 
-#### Null results
+Of the 15 tablets cited in the paper's Appendix A, 3 appear in the subset-sum
+witness set here (P008014, P008173, P008243). Most of the remainder were
+disambiguated in the paper by evidence other than subset-sum, chiefly the
+2.5:1 ratio of M056~f to M288, so their absence is expected rather than a
+failed check.
+
+The 425-candidate filter (tablets with one or two reverse entries) follows a
+heuristic described in the paper rather than a formally stated rule.
+
+The "unambiguous witness" condition is this repository's formalization of the
+paper's evidentiary criterion, requiring that a closure contain at least one
+intrinsically unambiguous notation. It has not been confirmed with the authors
+and may not be what they meant.
+
+## Exploratory null analysis
+
+No null distribution for this method appears in the papers listed below. What
+follows is a first attempt at one. It should be read as exploratory, for the
+reasons given in the Status and Limitations sections.
 
 All p-values are one-sided empirical upper-tail values with the finite-sample
-correction:
+correction `(count(null >= observed) + 1) / (n_resamples + 1)`. With 5,000
+draws the floor is 1/5001 = 0.0002, which is the smallest value the design can
+express rather than a measurement.
 
-```
-(count(null >= observed) + 1) / (n_resamples + 1)
-```
+Three randomizations were built:
 
-Each reported control uses 5,000 draws.
+- **Pool-wide.** Shuffles all notations corpus-wide, obverse and reverse alike.
+- **Obverse-only.** Holds every reverse summary exactly as attested and
+  permutes whole obverse bundles among tablets with the same number of obverse
+  notation slots.
+- **Position plus magnitude.** Preserves tablet side and the base-10 order of
+  the notation's maximum valid reading.
 
-| Definition and control       | Witness observed | Witness null mean | Null std | p        | Observed conditional rate | Null conditional rate |
-| ---------------------------- | ---------------- | ----------------- | -------- | -------- | ------------------------- | --------------------- |
-| Subset, obverse-only         | 52               | 12.3854           | 2.7201   | 0.000200 | 34.4371%                  | 19.5199%              |
-| Subset, position + magnitude | 52               | 21.7976           | 3.2497   | 0.000200 | 34.4371%                  | 18.5553%              |
-| Full, obverse-only           | 21               | 0.9378            | 0.9581   | 0.000200 | 33.3333%                  | 14.3864%              |
-| Full, position + magnitude   | 21               | 0.2760            | 0.5210   | 0.000200 | 33.3333%                  | 5.3029%               |
+### Results
 
-The obverse-only control keeps every reverse summary exactly as attested and
-permutes whole obverse bundles only among tablets with the same number of
-obverse notation slots. The position-plus-magnitude control preserves the
-tablet side and the base-10 order of the notation's maximum valid reading.
+| Statistic and control                  | Observed | Null mean | Null std | Null range   | p        |
+| -------------------------------------- | -------- | --------- | -------- | ------------ | -------- |
+| Subset raw, pool-wide                  | 151      | 147.6738  | 8.2070   | not recorded | 0.370526 |
+| Subset raw, obverse-only               | 151      | 63.3836   | 5.1710   | 46-86        | 0.000200 |
+| Subset raw, position + magnitude       | 151      | 117.5020  | 6.4662   | 94-138       | 0.000200 |
+| Subset witness, obverse-only           | 52       | 12.3854   | 2.7201   | 4-22         | 0.000200 |
+| Subset witness, position + magnitude   | 52       | 21.7976   | 3.2497   | 11-35        | 0.000200 |
+| Full-sum raw, obverse-only             | 63       | 6.2668    | 2.1863   | 1-15         | 0.000200 |
+| Full-sum raw, position + magnitude     | 63       | 5.0912    | 2.1315   | 0-14         | 0.000200 |
+| Full-sum witness, obverse-only         | 21       | 0.9378    | 0.9581   | not recorded | 0.000200 |
+| Full-sum witness, position + magnitude | 21       | 0.2760    | 0.5210   | not recorded | 0.000200 |
 
-Two caveats on the full-sum rows. The null means are close to zero, so ratios
-against them are unstable and are not reported as effect sizes; the raw
-statistic below has a better behaved denominator. The 5.3029% figure is
-computed over the 4,978 draws with a defined denominator, since 22 draws
-produce zero raw closures.
+The subset raw p-values under the two sharper controls were read off the
+already-computed 5,000-draw sequences by deterministic replay, not from fresh
+sampling. The replay reproduces the previously recorded null means and witness
+margins exactly.
 
-For the full-sum raw statistic:
+The full-sum witness null means are close to zero, with many draws at zero, so
+ratios against them are unstable and no effect size is reported for those rows.
 
-| Control              | Raw observed | Raw null mean | Null std | Null range | p        |
-| -------------------- | ------------ | ------------- | -------- | ---------- | -------- |
-| Obverse-only         | 63           | 6.2668        | 2.1863   | 1-15       | 0.000200 |
-| Position + magnitude | 63           | 5.0912        | 2.1315   | 0-14       | 0.000200 |
+### What these numbers do and do not support
 
-#### On the pool-wide null
+The same statistic can sit at chance under one null and at the floor of the
+scale under another. Subset raw closure is `p = 0.37` against the pool-wide
+null and `p = 0.0002` against both sharper ones. **No result here should be
+cited without naming its null.**
 
-Permissive subset closure under an earlier unstratified pool-wide null sits at
-chance: 151 observed, null mean 147.6738, null standard deviation 8.2070,
-`p = 0.370526`.
+The pool-wide null is **not an appropriate control** and its row is retained
+only because it was run first. It shuffles reverse summaries as well as
+obverse entries. Real summaries are large by construction, and a randomly
+drawn notation from the pool is typically smaller; small targets are easier to
+hit, which inflates the expected closure rate.
 
-That null is retained here because it was run first and because the contrast
-is instructive, but it is not the appropriate control. It shuffled reverse
-summaries as well as obverse entries. Real summaries are large by
-construction, and a randomly drawn notation from the corpus pool is typically
-smaller; small targets are easier to hit with a subset, which inflated the
-expected closure rate and made the real corpus look unremarkable. The
-obverse-only control holds each real summary fixed and removes this confound.
+Under the sharper controls, observed counts exceed the null for both
+definitions. The most that supports is that **some reverse lines are
+arithmetically related to the obverse of their own tablet** more than to the
+obverse of unrelated tablets of similar shape. That is a statement about the
+corpus. It is not a demonstration that the disambiguation method assigns
+number systems correctly, and it is not a false-positive rate for the method.
 
-No definition or null was selected after observing its p-value. Decision rules
-were recorded in `NOTES.md` before each statistic was computed.
+The obverse-only design also assumes that obverse bundles with equal slot
+counts are exchangeable. They are not, in several respects: magnitude,
+admissible systems, account type, semantic composition, provenance, scribe,
+and possible document families. The null breaks all of these at once alongside
+the arithmetic relation of interest, so the low p-values partly reflect that
+broader destruction rather than the arithmetic relation alone.
+
+## Limitations
+
+- The analyses are exploratory, arrived at sequentially with earlier results
+  visible. `NOTES.md` records decision rules before each computation, but this
+  is not preregistration.
+- Set identity between any count here and the published 24 is unverified.
+- The exchangeability assumption behind the obverse-only null is not
+  satisfied. A control additionally conditioning on the number of valid
+  reverse notations and on summary magnitude profile has not been implemented
+  here, and would be expected to raise the null means.
+- No claim about corpus change is made on the basis of the reverse-entry
+  counts of Appendix A tablets.
+- The corpus snapshot is 2023-02-09 and is neither the paper's snapshot nor
+  the current CDLI state.
+- The work is arithmetic and structural. It does not assign meanings to signs
+  or translate a tablet.
+- No implicit-object inheritance, bootstrapping classifier, or general
+  constraint solver has been implemented.
+- No tablet photographs are included. CDLI transliterations and artifact
+  images have different reuse conditions.
+- The full audit trail, including negative results, corrected conclusions and
+  errors, is in [`NOTES.md`](NOTES.md).
+
+## Open questions for the authors
+
+1. Can the 24 P-numbers be shared, so that set identity can be checked rather
+   than inferred from counts?
+2. What did manual inspection remove, and roughly how many candidates entered
+   it?
+3. Which corpus snapshot or commit was used, so that the inventory and numeral
+   deltas above can be attributed?
+4. Is the "unambiguous witness" formalization here a fair reading of the
+   evidentiary criterion in section 3.2?
+5. Is the P008805 metadata discrepancy below a typo, or a corpus record issue?
+
+## Corpus note
+
+Figure 2 of the corrected paper captions P008805 as "MDP 26, 177," while the
+pinned ATF header identifies it as "MDP 26, 117." The displayed
+transliteration matches P008805 exactly; the corpus record P008865 carries
+"MDP 26, 177" but different content. Recorded for upstream review, not
+silently corrected here.
 
 ## Repository layout
 
@@ -198,34 +286,11 @@ pe/null.py         seeded permutation-test and randomization infrastructure
 pe/closure.py      subset-sum and strict full-sum closure checks
 tests/             reproduction targets and deterministic sanity checks
 data/pe-headers/   pinned corpus submodule
-NOTES.md           dated decisions, divergences, and preregistrations
+NOTES.md           dated decisions, divergences, and corrections
 AGENTS.md          working rules for this repository
 ```
 
-## Interpretation limits
-
-- The pinned corpus postdates the paper's documented 2022-10-03 download, so
-  corpus drift is a plausible source of some deltas.
-- The result is arithmetic and structural. It does not assign meanings to
-  signs or translate a tablet.
-- The full-sum witness count and the published count are close, but the two
-  sets have not been shown to coincide.
-- No implicit-object inheritance, bootstrapping classifier, or general
-  constraint solver has been implemented.
-- No tablet photographs are included. CDLI transliterations and artifact
-  images have different reuse conditions.
-- The complete audit trail, including negative results and preregistered stop
-  rules, is in [`NOTES.md`](NOTES.md).
-
-## Corpus note
-
-Figure 2 of the corrected paper captions P008805 as "MDP 26, 177," while the
-pinned ATF header identifies it as "MDP 26, 117." The displayed
-transliteration matches P008805 exactly; the current corpus record P008865
-carries "MDP 26, 177" but different content. This metadata discrepancy is
-recorded for upstream review and is not silently corrected here.
-
-## Replicated work
+## Reimplemented work
 
 - Born, L., Kelley, K., Kambhatla, N., Chen, C., and Sarkar, A. 2019. Sign
   Clustering and Topic Extraction in Proto-Elamite. *Proceedings of the 3rd
@@ -251,6 +316,15 @@ recorded for upstream review and is not silently corrected here.
 
 Corpus data courtesy of the [Cuneiform Digital Library
 Initiative](https://cdli.mpiwg-berlin.mpg.de).
+
+## Method note
+
+This repository was built with substantial assistance from AI tools, both for
+writing code and for designing the statistical tests. The statistical design
+received no independent expert review before publication. An adversarial
+review after the first version identified several overclaims, which were
+removed rather than softened. The record of what was wrong, and when it was
+corrected, is in `NOTES.md`.
 
 ## License
 
